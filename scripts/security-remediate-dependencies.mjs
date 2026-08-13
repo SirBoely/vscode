@@ -16,6 +16,9 @@ const npmFixes = {
   '@octokit/request-error@>=1.0.0 <5.1.1': '5.1.1',
   '@octokit/plugin-paginate-rest@>=1.0.0 <9.2.2': '9.2.2',
   '@octokit/request@>=1.0.0 <8.4.1': '8.4.1',
+  '@vscode/gulp-electron': {
+    '@octokit/rest': '^20.0.0'
+  },
   'brace-expansion@>=2.0.0 <=2.0.1': '2.0.2',
   'katex@>=0.12.0 <=0.16.20': '0.16.21',
   'dompurify@<3.2.4': '3.2.4',
@@ -29,6 +32,10 @@ const npmFixes = {
 
 function prepare() {
   const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+  // gulp-untar is no longer used by current VS Code and is the only source of tar 2.x in this fork.
+  delete pkg.devDependencies?.['gulp-untar'];
+
   pkg.overrides = { ...(pkg.overrides ?? {}), ...npmFixes };
   fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
 
@@ -42,7 +49,13 @@ function prepare() {
 
 function collectNpmVersions() {
   const lock = JSON.parse(fs.readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
-  const wanted = ['esbuild','tar-fs','form-data','tmp','@octokit/request-error','@octokit/plugin-paginate-rest','@octokit/request','brace-expansion','katex','dompurify','tar','xml2js','postcss','braces','serialize-javascript','koa'];
+  const wanted = [
+    'esbuild','tar-fs','form-data','tmp',
+    '@vscode/gulp-electron','@octokit/rest','@octokit/core','@octokit/graphql',
+    '@octokit/request-error','@octokit/plugin-paginate-rest','@octokit/request',
+    'brace-expansion','katex','dompurify','tar','xml2js','postcss','braces',
+    'serialize-javascript','koa'
+  ];
   const found = new Map(wanted.map(name => [name, []]));
 
   for (const [path, meta] of Object.entries(lock.packages ?? {})) {
@@ -93,7 +106,16 @@ function report() {
   }
   lines.push('', '## Cargo resolved versions', '');
   for (const [name, versions] of cargo) lines.push(`- **${name}**: ${[...versions].sort().join(', ') || 'not present'}`);
-  lines.push('', '## Remediation policy', '', '- npm: update all packages allowed by existing semver constraints, plus narrowly-scoped overrides for the vulnerable ranges from the digest.', '- Cargo: raise the direct Tokio floor to 1.38.2 and refresh the full CLI lockfile, including git-based russh patches.', '- Merge only after pull-request CI is green.', '');
+  lines.push(
+    '',
+    '## Remediation policy',
+    '',
+    '- npm: update all packages allowed by existing semver constraints, remove the unused legacy gulp-untar chain, and use narrowly-scoped overrides for vulnerable transitive ranges.',
+    '- @vscode/gulp-electron remains on the Node 20-compatible line; only its legacy @octokit/rest subtree is lifted to the request-8 generation.',
+    '- Cargo: raise the direct Tokio floor to 1.38.2 and refresh the full CLI lockfile, including git-based russh patches.',
+    '- Merge only after pull-request CI is green.',
+    ''
+  );
   fs.writeFileSync(reportPath, `${lines.join('\n')}\n`);
 }
 
