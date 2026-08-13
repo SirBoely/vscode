@@ -1,66 +1,73 @@
 # Dependency security remediation — 2026-08-13
 
-Automated remediation branch for the Dependabot digest received on 2026-08-13.
+## Status
 
-## npm resolved versions and lockfile paths
+**PARTIAL PASS — merge blocked by russh security debt.**
 
-- **esbuild**: not present
-- **tar-fs**:
-  - 2.1.2 — `node_modules/prebuild-install/node_modules/tar-fs`
-  - 3.1.3 — `node_modules/tar-fs`
-- **form-data**: not present
-- **tmp**: not present
-- **@vscode/gulp-electron**:
-  - 1.37.0 — `node_modules/@vscode/gulp-electron`
-- **@octokit/rest**:
-  - 20.1.2 — `node_modules/@octokit/rest`
-- **@octokit/core**:
-  - 5.2.2 — `node_modules/@octokit/core`
-- **@octokit/graphql**:
-  - 7.1.1 — `node_modules/@octokit/graphql`
-- **@octokit/request-error**:
-  - 5.1.1 — `node_modules/@octokit/request-error`
-- **@octokit/plugin-paginate-rest**:
-  - 11.4.4-cjs.2 — `node_modules/@octokit/plugin-paginate-rest`
-- **@octokit/request**:
-  - 8.4.1 — `node_modules/@octokit/request`
-- **brace-expansion**:
-  - 1.1.18 — `node_modules/brace-expansion`
-  - 2.0.2 — `node_modules/mocha/node_modules/brace-expansion`
-  - 2.1.4 — `node_modules/@ts-morph/common/node_modules/brace-expansion`
-  - 2.1.4 — `node_modules/@vscode/l10n-dev/node_modules/brace-expansion`
-  - 2.1.4 — `node_modules/@vscode/test-cli/node_modules/brace-expansion`
-  - 2.1.4 — `node_modules/editorconfig/node_modules/brace-expansion`
-  - 2.1.4 — `node_modules/js-beautify/node_modules/brace-expansion`
-  - 5.0.9 — `node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion`
-  - 5.0.9 — `node_modules/@vscode/test-web/node_modules/brace-expansion`
-- **katex**: not present
-- **dompurify**: not present
-- **tar**:
-  - 6.2.1 — `node_modules/tar`
-- **xml2js**:
-  - 0.5.0 — `node_modules/xml2js`
-- **postcss**:
-  - 8.4.31 — `node_modules/@gulp-sourcemaps/identity-map/node_modules/postcss`
-  - 8.5.26 — `node_modules/postcss`
-- **braces**:
-  - 3.0.3 — `node_modules/braces`
-- **serialize-javascript**:
-  - 6.0.2 — `node_modules/serialize-javascript`
-- **koa**:
-  - 2.16.1 — `node_modules/koa`
+The npm dependency graph and the non-russh Cargo dependency graph were refreshed from the 2026-08-13 Dependabot digest. Generated lockfiles parsed successfully and `cargo metadata --locked` passed in the remediation workflow.
 
-## Cargo resolved versions
+## Remediated alert paths
 
-- **russh**: 0.37.1
-- **idna**: 1.1.0
-- **openssl**: 0.10.81
-- **tokio**: 1.53.1
+| Dependency | Resolved state | Gate |
+|---|---:|---|
+| esbuild | vulnerable path no longer present | PASS |
+| tar-fs | 2.1.2 / 3.1.3 | PASS |
+| form-data | vulnerable path no longer present | PASS |
+| tmp | vulnerable path no longer present | PASS |
+| @octokit/request-error | 5.1.1 | PASS |
+| @octokit/plugin-paginate-rest | 11.4.4-cjs.2 | PASS |
+| @octokit/request | 8.4.1 | PASS |
+| brace-expansion | affected 2.0.x path is 2.0.2 | PASS |
+| katex | vulnerable path no longer present | PASS |
+| dompurify | vulnerable path no longer present | PASS |
+| tar | 6.2.1; legacy tar 2.x chain removed | PASS |
+| xml2js | 0.5.0 | PASS |
+| postcss | 8.4.31 / 8.5.26 | PASS |
+| braces | 3.0.3 | PASS |
+| serialize-javascript | 6.0.2 | PASS |
+| koa | 2.16.1 | PASS |
+| idna | 1.1.0 | PASS |
+| openssl | 0.10.81 | PASS |
+| tokio | 1.53.1 | PASS |
 
-## Remediation policy
+## Build-tool compatibility remediation
 
-- npm: update all packages allowed by existing semver constraints, remove the unused legacy gulp-untar chain, and use narrowly-scoped overrides for vulnerable transitive ranges.
-- @vscode/gulp-electron remains on the Node 20-compatible line; only its legacy @octokit/rest subtree is lifted to the request-8 generation.
-- Cargo: raise the direct Tokio floor to 1.38.2 and refresh the full CLI lockfile, including git-based russh patches.
-- Merge only after pull-request CI is green.
+`@vscode/gulp-electron` remains on the Node-20-compatible `1.37.0` line. Its legacy Octokit subtree was lifted to:
 
+- `@octokit/rest` 20.1.2
+- `@octokit/core` 5.2.2
+- `@octokit/graphql` 7.1.1
+- `@octokit/request` 8.4.1
+
+The unused `gulp-untar` dependency was removed, eliminating its nested `tar 2.2.2` chain.
+
+## Remaining blocker — russh
+
+The CLI still resolves `russh 0.37.1` because `microsoft/dev-tunnels` currently declares `russh = 0.37.1` and VS Code patches crates.io to `microsoft/vscode-russh`.
+
+This cannot be considered green by version alone. GitHub's reviewed advisory data includes 2026 russh fixes newer than this compatibility line, including:
+
+- CVE-2026-42189 → fixed in 0.60.1
+- CVE-2026-46673 → fixed in 0.60.3
+- CVE-2026-48110 → fixed in 0.61.0
+- CVE-2026-46702 → fixed in 0.61.1
+- CVE-2026-68930 → fixed in 0.62.5
+
+Therefore **do not merge this branch as a complete security closure** until the tunnels/russh compatibility layer is migrated or the relevant fixes are demonstrably backported and independently validated.
+
+## Durable repository improvements
+
+`.github/dependabot.yml` now covers:
+
+- GitHub Actions at `/`
+- npm at `/`
+- Cargo at `/cli`
+
+This turns future dependency drift into scheduled repository-level update signals instead of relying only on digest emails.
+
+## Merge policy
+
+1. Open PR from `security/dependency-remediation-2026-08-13` to `main`.
+2. Require repository CI to pass.
+3. Treat russh as a blocking security exception, not an ignored alert.
+4. Merge only after the russh/tunnels migration gate is green.
