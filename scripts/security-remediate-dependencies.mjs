@@ -43,14 +43,14 @@ function prepare() {
 function collectNpmVersions() {
   const lock = JSON.parse(fs.readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8'));
   const wanted = ['esbuild','tar-fs','form-data','tmp','@octokit/request-error','@octokit/plugin-paginate-rest','@octokit/request','brace-expansion','katex','dompurify','tar','xml2js','postcss','braces','serialize-javascript','koa'];
-  const found = new Map(wanted.map(name => [name, new Set()]));
+  const found = new Map(wanted.map(name => [name, []]));
 
   for (const [path, meta] of Object.entries(lock.packages ?? {})) {
     if (!meta?.version) continue;
     for (const name of wanted) {
       const suffix = `node_modules/${name}`;
       if (path === suffix || path.endsWith(`/${suffix}`)) {
-        found.get(name).add(meta.version);
+        found.get(name).push({ version: meta.version, path });
       }
     }
   }
@@ -78,10 +78,19 @@ function report() {
     '',
     'Automated remediation branch for the Dependabot digest received on 2026-08-13.',
     '',
-    '## npm resolved versions',
+    '## npm resolved versions and lockfile paths',
     ''
   ];
-  for (const [name, versions] of npm) lines.push(`- **${name}**: ${[...versions].sort().join(', ') || 'not present'}`);
+  for (const [name, entries] of npm) {
+    if (!entries.length) {
+      lines.push(`- **${name}**: not present`);
+      continue;
+    }
+    const unique = [...new Map(entries.map(entry => [`${entry.version}|${entry.path}`, entry])).values()]
+      .sort((a, b) => `${a.version}|${a.path}`.localeCompare(`${b.version}|${b.path}`));
+    lines.push(`- **${name}**:`);
+    for (const entry of unique) lines.push(`  - ${entry.version} — \`${entry.path}\``);
+  }
   lines.push('', '## Cargo resolved versions', '');
   for (const [name, versions] of cargo) lines.push(`- **${name}**: ${[...versions].sort().join(', ') || 'not present'}`);
   lines.push('', '## Remediation policy', '', '- npm: update all packages allowed by existing semver constraints, plus narrowly-scoped overrides for the vulnerable ranges from the digest.', '- Cargo: raise the direct Tokio floor to 1.38.2 and refresh the full CLI lockfile, including git-based russh patches.', '- Merge only after pull-request CI is green.', '');
