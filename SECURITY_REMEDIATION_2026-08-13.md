@@ -10,12 +10,19 @@ Automated remediation branch for the Dependabot digest received on 2026-08-13.
   - 3.1.3 — `node_modules/tar-fs`
 - **form-data**: not present
 - **tmp**: not present
+- **@vscode/gulp-electron**:
+  - 1.37.0 — `node_modules/@vscode/gulp-electron`
+- **@octokit/rest**:
+  - 20.1.2 — `node_modules/@octokit/rest`
+- **@octokit/core**:
+  - 5.2.2 — `node_modules/@octokit/core`
+- **@octokit/graphql**:
+  - 7.1.1 — `node_modules/@octokit/graphql`
 - **@octokit/request-error**:
   - 5.1.1 — `node_modules/@octokit/request-error`
 - **@octokit/plugin-paginate-rest**:
-  - 9.2.2 — `node_modules/@octokit/plugin-paginate-rest`
+  - 11.4.4-cjs.2 — `node_modules/@octokit/plugin-paginate-rest`
 - **@octokit/request**:
-  - 5.6.3 — `node_modules/@octokit/graphql/node_modules/@octokit/request`
   - 8.4.1 — `node_modules/@octokit/request`
 - **brace-expansion**:
   - 1.1.18 — `node_modules/brace-expansion`
@@ -30,7 +37,6 @@ Automated remediation branch for the Dependabot digest received on 2026-08-13.
 - **katex**: not present
 - **dompurify**: not present
 - **tar**:
-  - 2.2.2 — `node_modules/gulp-untar/node_modules/tar`
   - 6.2.1 — `node_modules/tar`
 - **xml2js**:
   - 0.5.0 — `node_modules/xml2js`
@@ -53,7 +59,8 @@ Automated remediation branch for the Dependabot digest received on 2026-08-13.
 
 ## Remediation policy
 
-- npm: update all packages allowed by existing semver constraints, plus narrowly-scoped overrides for the vulnerable ranges from the digest.
+- npm: update all packages allowed by existing semver constraints, remove the unused legacy gulp-untar chain, and use narrowly-scoped overrides for vulnerable transitive ranges.
+- @vscode/gulp-electron remains on the Node 20-compatible line; only its legacy @octokit/rest subtree is lifted to the request-8 generation.
 - Cargo: raise the direct Tokio floor to 1.38.2 and refresh the full CLI lockfile, including git-based russh patches.
 - Merge only after pull-request CI is green.
 

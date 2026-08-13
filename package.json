@@ -177,7 +177,6 @@
     "gulp-replace": "^0.5.4",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-svgmin": "^4.1.0",
-    "gulp-untar": "^0.0.7",
     "husky": "^0.13.1",
     "innosetup": "6.0.5",
     "istanbul-lib-coverage": "^3.2.0",
@@ -243,7 +242,10 @@
     "postcss@<8.4.31": "8.4.31",
     "braces@<3.0.3": "3.0.3",
     "serialize-javascript@>=6.0.0 <6.0.2": "6.0.2",
-    "koa@<2.16.1": "2.16.1"
+    "koa@<2.16.1": "2.16.1",
+    "@vscode/gulp-electron": {
+      "@octokit/rest": "^20.0.0"
+    }
   },
   "repository": {
     "type": "git",
