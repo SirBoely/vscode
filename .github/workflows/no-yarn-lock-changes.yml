@@ -12,7 +12,7 @@ jobs:
           echo "user: ${{ github.event.pull_request.user.login }}"
           echo "association: ${{ github.event.pull_request.author_association }}"
           echo "is dependabot: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}"
-          echo "should_run=${{ !contains(fromJson('[\"OWNER\", \"MEMBER\", \"COLLABORATOR\"]'), github.event.pull_request.author_association) && github.event.pull_request.user.login != 'dependabot[bot]' }}" >> $GITHUB_OUTPUT
+          echo "should_run=${{ github.event.pull_request.author_association != 'OWNER' && github.event.pull_request.author_association != 'MEMBER' && github.event.pull_request.author_association != 'COLLABORATOR' && github.event.pull_request.user.login != 'dependabot[bot]' }}" >> $GITHUB_OUTPUT
       - name: Get file changes
         uses: trilom/file-changes-action@ce38c8ce2459ca3c303415eec8cb0409857b4272
         if: ${{ steps.control.outputs.should_run == 'true' }}
